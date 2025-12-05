@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Relatórios — Monitoramento Hidrológico</title>
+<style>
+  :root{
+    --bg:#0f0720; --panel:#200930; --accent:#5a2d8a; --muted:#9b84a8;
+    --card:#1b0f24; --glass: rgba(255,255,255,0.03); --success:#19b45e;
+    --warning:#f1c40f; --danger:#e84141; --white:#f7f6fb; --radius:12px;
+    --shadow: 0 6px 18px rgba(0,0,0,0.5); --max-width:1200px; --transition:200ms ease;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;}
+  html,body{height:100%}
+  body{background: linear-gradient(180deg,var(--bg), #0b0712);color:var(--white);padding:20px;}
+  .app{max-width:var(--max-width);margin:12px auto;display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;}
+
+  /* SIDEBAR */
+  .sidebar{background:linear-gradient(180deg,var(--panel), #1a0720);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);height:calc(100vh - 48px);position:sticky;top:24px;overflow:auto;}
+  .brand{display:flex;gap:12px;align-items:center;margin-bottom:18px;}
+  .brand .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#3b1a5b);display:flex;align-items:center;justify-content:center;font-weight:700;}
+  .brand h1{font-size:15px}
+  nav ul{list-style:none;margin-top:8px}
+  nav li{margin:8px 0}
+  nav a{display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;color:var(--white);text-decoration:none;transition:background var(--transition),transform var(--transition);font-size:14px;}
+  nav a:hover{background:rgba(255,255,255,0.03);transform:translateX(4px)}
+  nav a.active{background:linear-gradient(90deg,var(--accent), #3b1a5b);box-shadow:0 6px 14px rgba(90,45,138,0.18)}
+  .sidebar .footer{margin-top:18px;font-size:13px;color:var(--muted)}
+
+  /* MAIN */
+  .main{min-height:80vh}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;}
+  .title h2{font-size:20px}
+  .muted{color:var(--muted)}
+  .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:var(--shadow);}
+
+  /* layout */
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .controls input, .controls select{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--white)}
+  .controls .btn{background:linear-gradient(90deg,var(--accent), #3b1a5b);border:none;padding:8px 12px;border-radius:8px;color:var(--white);cursor:pointer}
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start}
+
+  .stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .stat{background:var(--glass);padding:12px;border-radius:10px;min-width:120px;text-align:center}
+  .stat .value{font-weight:800;font-size:18px}
+
+  #reportChart{height:320px;width:100%;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:8px;display:block}
+
+  .table{width:100%;border-collapse:collapse;margin-top:12px}
+  .table th, .table td{padding:8px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.03)}
+  .table th{color:var(--muted);font-size:13px}
+
+  @media(max-width:980px){
+    .app{grid-template-columns:72px 1fr;}
+    .brand h1{display:none}
+    nav a span.text{display:none}
+    .sidebar{padding:12px;height:auto;position:relative;top:0}
+    .grid{grid-template-columns:1fr}
+  }
+  @media(max-width:640px){
+    .app{grid-template-columns:1fr;gap:12px}
+    .sidebar{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="app" role="application" aria-label="Relatórios — Monitoramento">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" aria-label="Menu lateral">
+    <div class="brand">
+      <div class="logo">MH</div>
+      <div>
+        <h1>Monitoramento Hidrológico</h1>
+        <div class="muted" style="font-size:12px">Protótipo — Relatórios</div>
+      </div>
+    </div>
+
+    <nav role="navigation" aria-label="Navegação principal">
+      <ul>
+        <li><a href="index.html" data-link="dashboard"><span class="dot" style="background:var(--muted)"></span><span class="text"> Dashboard</span></a></li>
+        <li><a href="sensores.html" data-link="sensors"><span class="dot" style="background:var(--muted)"></span><span class="text"> Sensores</span></a></li>
+        <li><a href="mapa.html" data-link="map"><span class="dot" style="background:var(--muted)"></span><span class="text"> Mapa</span></a></li>
+        <li><a href="alertas.html" data-link="alerts"><span class="dot" style="background:var(--muted)"></span><span class="text"> Alertas</span></a></li>
+        <li><a href="relatorios.html" data-link="reports" class="active"><span class="dot" style="background:var(--accent)"></span><span class="text"> Relatórios</span></a></li>
+        <li><a href="sobre.html" data-link="about"><span class="dot" style="background:var(--muted)"></span><span class="text"> Sobre</span></a></li>
+      </ul>
+    </nav>
+
+    <div class="sidebar footer">
+      <div>Usuário: <strong>Mestre</strong></div>
+      <div style="margin-top:8px;font-size:13px;color:var(--muted)">Versão protótipo</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="title">
+        <h2>Relatórios</h2>
+        <div class="muted">Gerar e exportar relatórios de medições e eventos</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn" id="exportCsv">Exportar CSV</button>
+        <button class="btn" id="printBtn">Imprimir / Salvar PDF</button>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="controls">
+        <label class="muted">Período:</label>
+        <input type="date" id="dateFrom">
+        <input type="date" id="dateTo">
+        <label class="muted">Sensor:</label>
+        <select id="sensorSelect"><option value="all">Todos</option></select>
+        <button class="btn" id="applyBtn">Aplicar</button>
+      </div>
+
+      <div class="grid">
+        <div>
+          <div class="stats" id="statsWrap">
+            <div class="stat"><div class="muted">Medições</div><div class="value" id="statCount">--</div></div>
+            <div class="stat"><div class="muted">Mínimo</div><div class="value" id="statMin">--</div></div>
+            <div class="stat"><div class="muted">Máximo</div><div class="value" id="statMax">--</div></div>
+            <div class="stat"><div class="muted">Média</div><div class="value" id="statAvg">--</div></div>
+          </div>
+
+          <canvas id="reportChart" aria-label="Grafico de relatório"></canvas>
+
+          <table class="table" id="tableData" aria-label="Tabela de medições">
+            <thead><tr><th>Data / Hora</th><th>Sensor</th><th>Valor (m)</th></tr></thead>
+            <tbody><!-- preenchido por JS --></tbody>
+          </table>
+        </div>
+
+        <aside class="card" style="height:100%">
+          <div class="muted">Resumo rápido</div>
+          <div style="margin-top:10px" id="summaryText">Selecione um período e aplique os filtros para gerar o relatório.</div>
+          <div style="margin-top:12px">
+            <strong>Exportar</strong>
+            <div style="margin-top:8px;font-size:13px;color:var(--muted)">Use CSV para dados brutos ou imprimir para gerar PDF.</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* Dados simulados de medições (por sensor) */
+const sensors = [
+  {id:'X001', loc:'Ponte Central'},
+  {id:'X002', loc:'Bairro Sul'},
+  {id:'X003', loc:'Ponto B'},
+  {id:'X004', loc:'Reservatório Norte'}
+];
+
+// gerar séries de teste (ultimos 30 dias, 1 med/dia por sensor)
+function genMeasurements(){
+  const arr = [];
+  const days = 30;
+  const now = new Date();
+  for(let s of sensors){
+    let base = 1 + Math.random()*1.2;
+    for(let i=0;i<days;i++){
+      const d = new Date(now);
+      d.setDate(now.getDate() - (days - 1 - i));
+      // adiciona hora aleatoria
+      d.setHours(6 + Math.floor(Math.random()*12), Math.floor(Math.random()*60),0,0);
+      base += (Math.random()-0.5)*0.18;
+      arr.push({ sensor: s.id, time: d.toISOString(), value: +(base).toFixed(2) });
+    }
+  }
+  return arr;
+}
+let measurements = genMeasurements();
+
+/* DOM */
+const sensorSelect = document.getElementById('sensorSelect');
+const dateFrom = document.getElementById('dateFrom');
+const dateTo = document.getElementById('dateTo');
+const applyBtn = document.getElementById('applyBtn');
+const statCount = document.getElementById('statCount');
+const statMin = document.getElementById('statMin');
+const statMax = document.getElementById('statMax');
+const statAvg = document.getElementById('statAvg');
+const tableBody = document.querySelector('#tableData tbody');
+const summaryText = document.getElementById('summaryText');
+const exportCsvBtn = document.getElementById('exportCsv');
+const printBtn = document.getElementById('printBtn');
+
+/* popular select sensors */
+(function populateSensors(){
+  sensors.forEach(s => {
+    const o = document.createElement('option'); o.value = s.id; o.textContent = `${s.id} — ${s.loc}`; sensorSelect.appendChild(o);
+  });
+})();
+
+/* filtro e render */
+function applyFilters(){
+  let from = dateFrom.value ? new Date(dateFrom.value + 'T00:00:00') : null;
+  let to = dateTo.value ? new Date(dateTo.value + 'T23:59:59') : null;
+  const sensor = sensorSelect.value;
+
+  let filtered = measurements.filter(m => {
+    const t = new Date(m.time);
+    if(from && t < from) return false;
+    if(to && t > to) return false;
+    if(sensor !== 'all' && m.sensor !== sensor) return false;
+    return true;
+  });
+
+  // ordenar por data asc
+  filtered.sort((a,b)=> new Date(a.time) - new Date(b.time));
+
+  // stats
+  if(filtered.length === 0){
+    statCount.textContent = 0; statMin.textContent = '--'; statMax.textContent = '--'; statAvg.textContent = '--';
+    tableBody.innerHTML = '<tr><td colspan="3" class="muted">Nenhum dado no período selecionado.</td></tr>';
+    summaryText.textContent = 'Sem medições para o período / filtro selecionado.';
+    drawReportChart([]);
+    return;
+  }
+
+  const values = filtered.map(f => f.value);
+  const min = Math.min(...values), max = Math.max(...values);
+  const avg = values.reduce((a,b)=>a+b,0)/values.length;
+
+  statCount.textContent = filtered.length;
+  statMin.textContent = min.toFixed(2) + ' m';
+  statMax.textContent = max.toFixed(2) + ' m';
+  statAvg.textContent = avg.toFixed(2) + ' m';
+
+  // tabela
+  tableBody.innerHTML = filtered.map(f => `<tr><td>${new Date(f.time).toLocaleString()}</td><td>${f.sensor}</td><td>${f.value.toFixed(2)}</td></tr>`).join('');
+
+  summaryText.innerHTML = `<div><strong>${filtered.length}</strong> medições entre <strong>${from ? from.toLocaleDateString() : 'início'}</strong> e <strong>${to ? to.toLocaleDateString() : 'fim'}</strong>.</div>`;
+
+  // preparar série agregada por dia para o gráfico
+  const grouped = {};
+  for(const f of filtered){
+    const day = new Date(f.time).toISOString().slice(0,10);
+    grouped[day] = grouped[day] || []; grouped[day].push(f.value);
+  }
+  const series = Object.keys(grouped).sort().map(day => {
+    const vals = grouped[day];
+    const v = vals.reduce((a,b)=>a+b,0)/vals.length;
+    return { x: day, y: +(v).toFixed(2) };
+  });
+
+  drawReportChart(series);
+}
+
+/* desenhar gráfico simples (linha) no canvas */
+function drawReportChart(series){
+  const c = document.getElementById('reportChart');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  const ratio = window.devicePixelRatio || 1;
+  const width = c.clientWidth;
+  const height = 320;
+  c.width = width * ratio; c.height = height * ratio; ctx.scale(ratio, ratio);
+  ctx.clearRect(0,0,width,height);
+  // padding
+  const pad = 28; const innerW = width - pad*2; const innerH = height - pad*2;
+
+  if(!series || series.length === 0){
+    // draw placeholder
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    ctx.fillRect(pad,pad,innerW,innerH);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '14px Inter';
+    ctx.fillText('Sem dados para exibir', width/2 - 60, height/2);
+    return;
+  }
+
+  const values = series.map(s => s.y);
+  const min = Math.min(...values), max = Math.max(...values); const range = max - min || 1;
+
+  // grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+  for(let i=0;i<=4;i++){ const y = pad + (innerH/4)*i; ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(width-pad,y); ctx.stroke(); }
+
+  // line
+  ctx.beginPath();
+  series.forEach((p,i)=>{
+    const x = pad + (innerW/(series.length-1)) * i;
+    const y = pad + innerH - ((p.y - min)/range) * innerH;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  const grad = ctx.createLinearGradient(0,0,width,0); grad.addColorStop(0,'#8a3be0'); grad.addColorStop(1,'#622190');
+  ctx.strokeStyle = grad; ctx.lineWidth = 2.8; ctx.stroke();
+
+  // fill
+  ctx.lineTo(width-pad, pad+innerH); ctx.lineTo(pad, pad+innerH); ctx.closePath();
+  const fillGrad = ctx.createLinearGradient(0,pad,0,pad+innerH);
+  fillGrad.addColorStop(0,'rgba(138,59,224,0.12)'); fillGrad.addColorStop(1,'rgba(98,33,144,0.02)');
+  ctx.fillStyle = fillGrad; ctx.fill();
+
+  // points
+  ctx.fillStyle = '#fff';
+  series.forEach((p,i)=>{
+    const x = pad + (innerW/(series.length-1)) * i;
+    const y = pad + innerH - ((p.y - min)/range) * innerH;
+    ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill();
+  });
+
+  // x labels (rotacionar se muitos)
+  ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '12px Inter';
+  series.forEach((p,i)=>{
+    if(i % Math.ceil(series.length/6) === 0){
+      const x = pad + (innerW/(series.length-1)) * i;
+      ctx.fillText(p.x, x-18, height-6);
+    }
+  });
+}
+
+/* exportar CSV (tabela atual) */
+function exportCsv(){
+  const rows = Array.from(document.querySelectorAll('#tableData tbody tr')).map(tr => {
+    return Array.from(tr.children).map(td => td.textContent.trim());
+  });
+  if(rows.length === 0){ alert('Nenhum dado para exportar.'); return; }
+  const csv = [['Data/Hora','Sensor','Valor'], ...rows].map(r => r.map(c => `"${c.replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `relatorio_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* mark nav active (mesma lógica) */
+(function markActiveNav(){
+  const anchors = document.querySelectorAll('nav a');
+  const path = window.location.pathname.split('/').pop() || 'relatorios.html';
+  anchors.forEach(a=>{
+    const href = a.getAttribute('href');
+    if(href && href.split('/').pop() === path) a.classList.add('active'); else a.classList.remove('active');
+    if(!href || href.trim() === '#'){ a.addEventListener('click', (e)=>{ e.preventDefault(); const link = a.getAttribute('data-link') || 'acao'; alert('Navegar para: ' + link + ' (protótipo)'); }); }
+  });
+})();
+
+/* eventos */
+applyBtn.addEventListener('click', applyFilters);
+exportCsvBtn.addEventListener('click', exportCsv);
+printBtn.addEventListener('click', ()=> window.print());
+
+/* inicializar com últimos 7 dias */
+(function init(){
+  const now = new Date();
+  const before = new Date(); before.setDate(now.getDate() - 7);
+  dateTo.value = now.toISOString().slice(0,10);
+  dateFrom.value = before.toISOString().slice(0,10);
+  applyFilters();
+})();
+
+/* redimensionar grafico */
+let rto; window.addEventListener('resize', ()=> { clearTimeout(rto); rto = setTimeout(()=> {
+  // re-desenha
+  // pegar último state: reaplicar filtros
+  applyFilters();
+},140); });
+</script>
+</body>
+</html>

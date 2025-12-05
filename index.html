@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Dashboard — Monitoramento Hidrológico</title>
+<style>
+  /* --------------------------
+     VARIÁVEIS DE CORES (PSICOLOGIA)
+  ---------------------------*/
+  :root{
+    --bg:#0f0720;
+    --panel:#200930;
+    --accent:#5a2d8a;
+    --muted:#9b84a8;
+    --card:#1b0f24;
+    --glass: rgba(255,255,255,0.03);
+    --success:#19b45e;
+    --warning:#f1c40f;
+    --danger:#e84141;
+    --white: #f7f6fb;
+    --radius:12px;
+    --shadow: 0 6px 18px rgba(0,0,0,0.5);
+    --max-width:1200px;
+    --transition: 200ms ease;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+  html,body{height:100%}
+  body{
+    background: linear-gradient(180deg,var(--bg), #0b0712);
+    color:var(--white);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    padding:20px;
+  }
+
+  .app{
+    max-width:var(--max-width);
+    margin:12px auto;
+    display:grid;
+    grid-template-columns: 280px 1fr;
+    gap:20px;
+    align-items:start;
+  }
+
+  /* SIDEBAR */
+  .sidebar{
+    background:linear-gradient(180deg,var(--panel), #1a0720);
+    border-radius:var(--radius);
+    padding:18px;
+    box-shadow:var(--shadow);
+    height:calc(100vh - 48px);
+    position:sticky;
+    top:24px;
+    overflow:auto;
+    transition:width var(--transition);
+  }
+  .brand{display:flex;gap:12px;align-items:center;margin-bottom:18px;}
+  .brand .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#3b1a5b);display:flex;align-items:center;justify-content:center;font-weight:700;}
+  .brand h1{font-size:15px;letter-spacing:0.3px}
+  nav ul{list-style:none;margin-top:8px}
+  nav li{margin:8px 0}
+  nav a{
+    display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;color:var(--white);text-decoration:none;
+    transition:background var(--transition),transform var(--transition);
+    font-size:14px;
+  }
+  nav a:hover{background:rgba(255,255,255,0.03);transform:translateX(4px)}
+  nav a .dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex-shrink:0}
+  nav a.active{background:linear-gradient(90deg,var(--accent), #3b1a5b);box-shadow:0 6px 14px rgba(90,45,138,0.18)}
+  .sidebar .footer{margin-top:18px;font-size:13px;color:var(--muted)}
+
+  /* MAIN */
+  .main{min-height:80vh;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;}
+  .topbar .title{display:flex;flex-direction:column;}
+  .topbar h2{font-size:20px}
+  .topbar p{color:var(--muted);font-size:13px}
+
+  /* Grid */
+  .grid{display:grid;grid-template-columns: repeat(12,1fr);gap:16px;align-items:start;}
+  .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:var(--shadow);}
+  .card.wide{grid-column: span 8;}
+  .card.narrow{grid-column: span 4;}
+  .card.full{grid-column: 1 / -1;}
+
+  .level{display:flex;gap:18px;align-items:center;}
+  .level .icon{width:84px;height:84px;border-radius:14px;background:linear-gradient(135deg, rgba(90,45,138,0.15), rgba(90,45,138,0.05));display:flex;align-items:center;justify-content:center;font-size:30px;}
+  .level .meta h3{font-size:18px;margin-bottom:6px}
+  .level .meta p{color:var(--muted);font-size:13px}
+  .level .value{font-size:34px;font-weight:700;margin-top:6px}
+
+  .badges{display:flex;gap:8px;margin-top:8px}
+  .badge{padding:8px 12px;border-radius:999px;font-weight:600;font-size:13px}
+  .badge.normal{background:rgba(25,180,94,0.12);color:var(--success)}
+  .badge.alert{background:rgba(241,196,15,0.12);color:var(--warning)}
+  .badge.danger{background:rgba(232,65,65,0.12);color:var(--danger)}
+
+  .shortcuts{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .shortcut{background:var(--glass);padding:10px;border-radius:10px;min-width:100px;text-align:center;font-size:13px;color:var(--muted)}
+  .shortcut strong{display:block;color:var(--white);margin-bottom:6px}
+
+  .sensors {display:flex;flex-direction:column;gap:10px;margin-top:6px}
+  .sensor-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent)}
+  .sensor-item .left{display:flex;gap:10px;align-items:center}
+  .sensor-item .dot.small{width:12px;height:12px;border-radius:50%}
+  .sensor-item .meta{font-size:13px;color:var(--muted)}
+  .sensor-item .value{font-weight:700}
+
+  .chart-wrap{height:220px;display:flex;flex-direction:column;gap:8px}
+  canvas{width:100%;height:100%;display:block;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent)}
+
+  .alerts-list{display:flex;flex-direction:column;gap:8px}
+  .alert-item{display:flex;justify-content:space-between;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
+  .alert-item .left{display:flex;gap:10px;align-items:center}
+  .alert-item .time{color:var(--muted);font-size:12px}
+
+  footer{margin-top:18px;color:var(--muted);font-size:13px}
+
+  @media(max-width:980px){
+    .app{grid-template-columns: 72px 1fr;}
+    .brand h1{display:none}
+    nav a span.text{display:none}
+    .sidebar{padding:12px;height:auto;position:relative;top:0}
+  }
+  @media(max-width:640px){
+    body{padding:10px}
+    .app{grid-template-columns:1fr;gap:12px}
+    .sidebar{display:none}
+    .card.wide{grid-column:1 / -1}
+    .card.narrow{grid-column:1 / -1}
+    .topbar{flex-direction:column;align-items:stretch;gap:8px}
+  }
+
+  .muted{color:var(--muted)}
+  .right{margin-left:auto}
+  .btn{background:linear-gradient(90deg,var(--accent), #3b1a5b);color:var(--white);padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:600;transition:transform var(--transition),opacity var(--transition);}
+  .btn:active{transform:translateY(1px)}
+</style>
+</head>
+<body>
+
+<div class="app" role="application" aria-label="Painel de Monitoramento Hidrológico">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" aria-label="Menu lateral">
+    <div class="brand" role="banner">
+      <div class="logo" aria-hidden="true">MH</div>
+      <div>
+        <h1>Monitoramento Hidrológico</h1>
+        <div class="muted" style="font-size:12px">Protótipo — Dashboard</div>
+      </div>
+    </div>
+
+    <nav role="navigation" aria-label="Navegação principal">
+      <ul>
+        <!-- Links agora apontam para arquivos reais -->
+        <li><a href="index.html" data-link="dashboard" class=""><span class="dot" style="background:var(--accent)"></span><span class="text"> Dashboard</span></a></li>
+        <li><a href="sensores.html" data-link="sensors"><span class="dot" style="background:var(--muted)"></span><span class="text"> Sensores</span></a></li>
+        <li><a href="mapa.html" data-link="map"><span class="dot" style="background:var(--muted)"></span><span class="text"> Mapa</span></a></li>
+        <li><a href="alertas.html" data-link="alerts"><span class="dot" style="background:var(--muted)"></span><span class="text"> Alertas</span></a></li>
+        <li><a href="relatorios.html" data-link="reports"><span class="dot" style="background:var(--muted)"></span><span class="text"> Relatórios</span></a></li>
+        <li><a href="sobre.html" data-link="about"><span class="dot" style="background:var(--muted)"></span><span class="text"> Sobre</span></a></li>
+      </ul>
+    </nav>
+
+    <div class="footer">
+      <div>Usuário: <strong>Mestre</strong></div>
+      <div style="margin-top:8px;font-size:13px;color:var(--muted)">Versão protótipo</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" id="main">
+    <div class="topbar">
+      <div class="title">
+        <h2>Dashboard</h2>
+        <p class="muted">Visão geral em tempo real — Monitoramento de níveis</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="muted" id="last-updated">Última atualização: — </div>
+        <button class="btn" id="refreshBtn" aria-label="Atualizar dados">Atualizar</button>
+      </div>
+    </div>
+
+    <section class="grid" aria-live="polite">
+      <!-- CARD: NÍVEL ATUAL -->
+      <article class="card wide" role="region" aria-label="Nível atual do rio">
+        <div class="level">
+          <div class="icon" aria-hidden="true">💧</div>
+          <div class="meta">
+            <h3>Nível Atual — Rio A</h3>
+            <p class="muted">Ponto de monitoramento: Ponte Central</p>
+            <div style="display:flex;align-items:center;gap:18px;margin-top:6px">
+              <div>
+                <div class="value" id="currentLevel">-- m</div>
+                <div class="muted" id="variation">Variação: --</div>
+              </div>
+              <div style="margin-left:18px">
+                <div class="badges" id="riskBadges">
+                  <div class="badge normal" id="badgeNormal">Normal</div>
+                  <div class="badge alert" id="badgeAlert">Alerta</div>
+                  <div class="badge danger" id="badgeDanger">Emergência</div>
+                </div>
+                <div style="margin-top:6px;font-size:13px;color:var(--muted)">Status atual: <strong id="statusText">--</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px" class="shortcuts" aria-hidden="false">
+          <div class="shortcut"><strong id="sensorsCount">--</strong> Sensores</div>
+          <div class="shortcut"><strong id="activeAlerts">--</strong> Alertas ativos</div>
+          <div class="shortcut"><strong id="uptime">--</strong> Uptime médio</div>
+        </div>
+      </article>
+
+      <!-- GRÁFICO HISTÓRICO -->
+      <article class="card narrow" role="region" aria-label="Gráfico histórico">
+        <h4 style="margin-bottom:8px">Histórico — últimas 24h</h4>
+        <div class="chart-wrap">
+          <canvas id="levelChart" aria-label="Gráfico de nível do rio"></canvas>
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)">
+            <div>Min: <span id="minVal">--</span></div>
+            <div>Máx: <span id="maxVal">--</span></div>
+            <div>Média: <span id="avgVal">--</span></div>
+          </div>
+        </div>
+      </article>
+
+      <!-- SENSORES -->
+      <article class="card narrow" role="region" aria-label="Sensores">
+        <h4 style="margin-bottom:8px">Sensores próximos</h4>
+        <div class="sensors" id="sensorsList"></div>
+      </article>
+
+      <!-- ALERTAS -->
+      <article class="card wide" role="region" aria-label="Alertas recentes">
+        <h4 style="margin-bottom:8px">Alertas recentes</h4>
+        <div class="alerts-list" id="alertsList"></div>
+      </article>
+
+      <!-- CONTROLS -->
+      <article class="card narrow" role="region" aria-label="Controles">
+        <h4 style="margin-bottom:8px">Controles rápidos</h4>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <!-- esses botões navegam para as páginas reais -->
+          <a class="btn" href="mapa.html" role="button">Abrir Mapa</a>
+          <a class="btn" href="relatorios.html" role="button">Relatórios</a>
+          <a class="btn" href="sobre.html" role="button">Sobre o projeto</a>
+        </div>
+      </article>
+
+      <!-- RODAPÉ/INSTITUCIONAL -->
+      <article class="card full" role="region" aria-label="Informações do projeto">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+          <div>
+            <strong>Sistema IoT de Monitoramento de Nível de Rios</strong>
+            <div class="muted" style="margin-top:6px">Protótipo visual para projeto acadêmico — prevenção de enchentes e suporte à decisão.</div>
+          </div>
+          <div class="muted">© 2025 — Equipe de Projeto</div>
+        </div>
+      </article>
+    </section>
+
+    <footer aria-hidden="false">
+      <div class="muted">Dica: substitua os dados simulados por uma API real. Este protótipo usa canvas para o gráfico.</div>
+    </footer>
+  </main>
+</div>
+
+<script>
+/* ---------- Dados simulados (mesmo do protótipo) ---------- */
+const sample = {
+  sensors:[
+    {id:'X001', type:'Ultrassônico', loc:'Ponte Central', level:1.82, status:'active'},
+    {id:'X002', type:'Pressão', loc:'Bairro Sul', level:0.95, status:'active'},
+    {id:'X003', type:'Ultrassônico', loc:'Ponto B', level:2.95, status:'offline'}
+  ],
+  alerts:[
+    {id:1, level:'danger', title:'Nível crítico — Rio A', time:'09:32'},
+    {id:2, level:'alert', title:'Tendência de subida — Ponte Central', time:'08:10'},
+    {id:3, level:'warning', title:'Sensor offline — Ponto B', time:'07:48'}
+  ],
+  series: (function(){
+    const arr=[]; let base=1.3;
+    for(let i=0;i<24;i++){ const noise=(Math.sin(i/3)+Math.random()*0.25); arr.push({t:`${i}h`, v: +(base + noise).toFixed(2)}); base += (Math.random()-0.5)*0.03; }
+    return arr;
+  })()
+};
+
+/* ---------- DOM ---------- */
+const currentLevelEl = document.getElementById('currentLevel');
+const variationEl = document.getElementById('variation');
+const statusTextEl = document.getElementById('statusText');
+const sensorsCountEl = document.getElementById('sensorsCount');
+const activeAlertsEl = document.getElementById('activeAlerts');
+const uptimeEl = document.getElementById('uptime');
+const lastUpdatedEl = document.getElementById('last-updated');
+const sensorsListEl = document.getElementById('sensorsList');
+const alertsListEl = document.getElementById('alertsList');
+const minValEl = document.getElementById('minVal');
+const maxValEl = document.getElementById('maxVal');
+const avgValEl = document.getElementById('avgVal');
+const badgeNormal = document.getElementById('badgeNormal');
+const badgeAlert = document.getElementById('badgeAlert');
+const badgeDanger = document.getElementById('badgeDanger');
+
+/* ---------- Utils ---------- */
+function calcStats(series){ const values = series.map(s=>s.v); const min = Math.min(...values); const max = Math.max(...values); const avg = values.reduce((a,b)=>a+b,0)/values.length; return {min,max,avg}; }
+
+function renderDashboard(data){
+  const main = data.sensors[0];
+  currentLevelEl.textContent = `${main.level.toFixed(2)} m`;
+  variationEl.textContent = `Variação: +${(Math.random()*0.15).toFixed(2)} m nas últimas 3h`;
+  statusTextEl.textContent = (main.level < 1.6) ? 'Normal' : (main.level < 2.5 ? 'Alerta' : 'Emergência');
+
+  badgeNormal.style.opacity = main.level < 1.6 ? 1 : 0.35;
+  badgeAlert.style.opacity = (main.level >= 1.6 && main.level < 2.5) ? 1 : 0.35;
+  badgeDanger.style.opacity = main.level >= 2.5 ? 1 : 0.35;
+
+  sensorsCountEl.textContent = data.sensors.length;
+  activeAlertsEl.textContent = data.alerts.length;
+  uptimeEl.textContent = '99.2%';
+
+  lastUpdatedEl.textContent = `Última atualização: ${new Date().toLocaleString()}`;
+
+  sensorsListEl.innerHTML = '';
+  data.sensors.forEach(s=>{
+    const div = document.createElement('div');
+    div.className = 'sensor-item';
+    div.innerHTML = `
+      <div class="left">
+        <div class="dot small" style="background:${s.status==='active'? 'var(--success)':'var(--muted)'}"></div>
+        <div>
+          <div style="font-weight:600">${s.id} - ${s.type}</div>
+          <div class="meta">${s.loc}</div>
+        </div>
+      </div>
+      <div class="value">${s.level.toFixed(2)} m</div>
+    `;
+    sensorsListEl.appendChild(div);
+  });
+
+  alertsListEl.innerHTML = '';
+  data.alerts.forEach(a=>{
+    const item = document.createElement('div');
+    item.className = 'alert-item';
+    item.innerHTML = `
+      <div class="left">
+        <div style="width:10px;height:10px;border-radius:50%;background:${a.level==='danger'? 'var(--danger)': (a.level==='alert'? 'var(--warning)' : 'var(--muted)') }"></div>
+        <div style="margin-left:8px">
+          <div style="font-weight:600">${a.title}</div>
+          <div class="time muted">${a.time}</div>
+        </div>
+      </div>
+      <div class="muted">${a.id}</div>
+    `;
+    alertsListEl.appendChild(item);
+  });
+
+  const s = calcStats(data.series);
+  minValEl.textContent = s.min.toFixed(2) + ' m';
+  maxValEl.textContent = s.max.toFixed(2) + ' m';
+  avgValEl.textContent = s.avg.toFixed(2) + ' m';
+
+  drawLineChart('levelChart', data.series);
+}
+
+/* ---------- Canvas chart ---------- */
+function drawLineChart(canvasId, series){
+  const c = document.getElementById(canvasId);
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  const ratio = window.devicePixelRatio || 1;
+  const width = c.clientWidth;
+  const height = c.clientHeight;
+  c.width = width * ratio; c.height = height * ratio; ctx.scale(ratio, ratio);
+  ctx.clearRect(0,0,width,height);
+  const pad = 28; const innerW = width - pad*2; const innerH = height - pad*2;
+  const values = series.map(s=>s.v); const min = Math.min(...values); const max = Math.max(...values); const range = max - min || 1;
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+  for(let i=0;i<=4;i++){ const y = pad + (innerH/4)*i; ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(width-pad,y); ctx.stroke(); }
+  ctx.beginPath();
+  series.forEach((p,i)=>{
+    const x = pad + (innerW/(series.length-1)) * i;
+    const y = pad + innerH - ((p.v - min)/range) * innerH;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  const grad = ctx.createLinearGradient(0,0,width,0); grad.addColorStop(0,'#8a3be0'); grad.addColorStop(1,'#622190');
+  ctx.strokeStyle = grad; ctx.lineWidth = 2.6; ctx.stroke();
+  ctx.lineTo(width-pad, pad+innerH); ctx.lineTo(pad, pad+innerH); ctx.closePath();
+  const fillGrad = ctx.createLinearGradient(0,pad,0,pad+innerH);
+  fillGrad.addColorStop(0,'rgba(138,59,224,0.12)'); fillGrad.addColorStop(1,'rgba(98,33,144,0.02)');
+  ctx.fillStyle = fillGrad; ctx.fill();
+  ctx.fillStyle = '#fff'; series.forEach((p,i)=>{ const x = pad + (innerW/(series.length-1)) * i; const y = pad + innerH - ((p.v - min)/range) * innerH; ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill(); });
+  ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '12px Inter, system-ui';
+  for(let i=0;i<series.length;i+=Math.ceil(series.length/6)){ const x = pad + (innerW/(series.length-1)) * i; ctx.fillText(series[i].t, x-10, height-6); }
+}
+
+/* ---------- Eventos ---------- */
+document.getElementById('refreshBtn').addEventListener('click', ()=> {
+  sample.series = sample.series.map(s => ({t:s.t, v: +(s.v + (Math.random()-0.5)*0.08).toFixed(2)}));
+  sample.sensors.forEach(s => s.level = +(s.level + (Math.random()-0.5)*0.05).toFixed(2));
+  renderDashboard(sample);
+});
+
+/* Navigation: marcar item ativo conforme arquivo atual.
+   Não bloqueamos navegacao padrão para anchors que apontem a arquivos. */
+(function markActiveNav(){
+  const anchors = document.querySelectorAll('nav a');
+  const path = window.location.pathname.split('/').pop() || 'index.html';
+  anchors.forEach(a=>{
+    const href = a.getAttribute('href');
+    // compara somente o nome do arquivo
+    if(href && href.split('/').pop() === path){
+      a.classList.add('active');
+    } else {
+      a.classList.remove('active');
+    }
+    // se href == "#" (ou vazio) e data-link presente, mantemos comportamento protótipo
+    if(!href || href.trim() === '#'){
+      a.addEventListener('click', (e)=>{
+        e.preventDefault();
+        const link = a.getAttribute('data-link') || 'acao';
+        alert('Navegar para: ' + link + ' (protótipo)');
+      });
+    }
+  });
+})();
+
+/* inicializar */
+renderDashboard(sample);
+
+/* redimensionar gráfico em resize */
+let resizeTimeout;
+window.addEventListener('resize', ()=>{
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(()=> drawLineChart('levelChart', sample.series), 120);
+});
+</script>
+</body>
+</html>

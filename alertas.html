@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Alertas — Monitoramento Hidrológico</title>
+<style>
+  :root{
+    --bg:#0f0720; --panel:#200930; --accent:#5a2d8a; --muted:#9b84a8;
+    --card:#1b0f24; --glass: rgba(255,255,255,0.03); --success:#19b45e;
+    --warning:#f1c40f; --danger:#e84141; --white:#f7f6fb; --radius:12px;
+    --shadow: 0 6px 18px rgba(0,0,0,0.5); --max-width:1200px; --transition:200ms ease;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;}
+  html,body{height:100%}
+  body{background: linear-gradient(180deg,var(--bg), #0b0712);color:var(--white);padding:20px;}
+  .app{max-width:var(--max-width);margin:12px auto;display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;}
+
+  /* SIDEBAR */
+  .sidebar{background:linear-gradient(180deg,var(--panel), #1a0720);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);height:calc(100vh - 48px);position:sticky;top:24px;overflow:auto;}
+  .brand{display:flex;gap:12px;align-items:center;margin-bottom:18px;}
+  .brand .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#3b1a5b);display:flex;align-items:center;justify-content:center;font-weight:700;}
+  .brand h1{font-size:15px}
+  nav ul{list-style:none;margin-top:8px}
+  nav li{margin:8px 0}
+  nav a{display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;color:var(--white);text-decoration:none;transition:background var(--transition),transform var(--transition);font-size:14px;}
+  nav a:hover{background:rgba(255,255,255,0.03);transform:translateX(4px)}
+  nav a.active{background:linear-gradient(90deg,var(--accent), #3b1a5b);box-shadow:0 6px 14px rgba(90,45,138,0.18)}
+  .sidebar .footer{margin-top:18px;font-size:13px;color:var(--muted)}
+
+  /* MAIN */
+  .main{min-height:80vh}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;}
+  .title h2{font-size:20px}
+  .muted{color:var(--muted)}
+  .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:var(--shadow);}
+
+  /* Layout content */
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start;}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .filters input, .filters select{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--white)}
+  .filters .btn{background:linear-gradient(90deg,var(--accent), #3b1a5b);border:none;padding:8px 12px;border-radius:8px;color:var(--white);cursor:pointer}
+  .list{display:flex;flex-direction:column;gap:10px;max-height:62vh;overflow:auto;padding-right:6px}
+  .alert-card{display:flex;justify-content:space-between;align-items:flex-start;padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent)}
+  .alert-left{display:flex;gap:12px;align-items:flex-start}
+  .pill{padding:6px 10px;border-radius:999px;font-weight:700;font-size:13px}
+  .pill.danger{background:rgba(232,65,65,0.12);color:var(--danger)}
+  .pill.alert{background:rgba(241,196,15,0.12);color:var(--warning)}
+  .pill.info{background:rgba(155,132,168,0.06);color:var(--muted)}
+  .alert-meta{display:flex;flex-direction:column}
+  .alert-meta .title{font-weight:700}
+  .alert-meta .sub{color:var(--muted);font-size:13px}
+  .alert-actions{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+  .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--white);cursor:pointer}
+  .small{font-size:13px}
+
+  /* detail panel */
+  .detail{position:sticky;top:24px;padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.012), transparent);box-shadow:var(--shadow)}
+  .detail h3{margin-bottom:8px}
+  .detail .row{display:flex;justify-content:space-between;gap:8px;margin-bottom:8px}
+  .timeline{max-height:28vh;overflow:auto;padding-right:6px}
+
+  @media(max-width:980px){
+    .app{grid-template-columns:72px 1fr;}
+    .brand h1{display:none}
+    nav a span.text{display:none}
+    .sidebar{padding:12px;height:auto;position:relative;top:0}
+    .grid{grid-template-columns:1fr}
+  }
+  @media(max-width:640px){
+    .app{grid-template-columns:1fr;gap:12px}
+    .sidebar{display:none}
+    .list{max-height:40vh}
+  }
+</style>
+</head>
+<body>
+<div class="app" role="application" aria-label="Alertas — Monitoramento">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" aria-label="Menu lateral">
+    <div class="brand">
+      <div class="logo">MH</div>
+      <div>
+        <h1>Monitoramento Hidrológico</h1>
+        <div class="muted" style="font-size:12px">Protótipo — Alertas</div>
+      </div>
+    </div>
+
+    <nav role="navigation" aria-label="Navegação principal">
+      <ul>
+        <li><a href="index.html" data-link="dashboard"><span class="dot" style="background:var(--muted)"></span><span class="text"> Dashboard</span></a></li>
+        <li><a href="sensores.html" data-link="sensors"><span class="dot" style="background:var(--muted)"></span><span class="text"> Sensores</span></a></li>
+        <li><a href="mapa.html" data-link="map"><span class="dot" style="background:var(--muted)"></span><span class="text"> Mapa</span></a></li>
+        <li><a href="alertas.html" data-link="alerts" class="active"><span class="dot" style="background:var(--accent)"></span><span class="text"> Alertas</span></a></li>
+        <li><a href="relatorios.html" data-link="reports"><span class="dot" style="background:var(--muted)"></span><span class="text"> Relatórios</span></a></li>
+        <li><a href="sobre.html" data-link="about"><span class="dot" style="background:var(--muted)"></span><span class="text"> Sobre</span></a></li>
+      </ul>
+    </nav>
+
+    <div class="sidebar footer">
+      <div>Usuário: <strong>Mestre</strong></div>
+      <div style="margin-top:8px;font-size:13px;color:var(--muted)">Versão protótipo</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="title">
+        <h2>Alertas</h2>
+        <div class="muted">Monitore, filtre e gerencie alertas do sistema em tempo real</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn" id="exportCsv">Exportar CSV</button>
+      </div>
+    </div>
+
+    <section class="grid">
+      <!-- lista de alertas -->
+      <article class="card" role="region" aria-label="Lista de alertas">
+        <div class="filters">
+          <input id="q" placeholder="Buscar texto, sensor, localização..." aria-label="Buscar alertas">
+          <select id="typeFilter"><option value="all">Todos os tipos</option><option value="danger">Emergência</option><option value="alert">Alerta</option><option value="info">Info</option></select>
+          <select id="sensorFilter"><option value="all">Todos os sensores</option></select>
+          <select id="periodFilter"><option value="24h">Últimas 24h</option><option value="7d">Últimos 7 dias</option><option value="30d">Últimos 30 dias</option></select>
+          <button class="btn" id="applyFilter">Aplicar</button>
+        </div>
+
+        <div class="list" id="alertsList" tabindex="0" aria-label="Lista de alertas">
+          <!-- preenchido por JS -->
+        </div>
+      </article>
+
+      <!-- painel de detalhes -->
+      <aside class="card detail" role="region" aria-label="Detalhes do alerta" id="detailPanel">
+        <h3 id="detailTitle">Selecione um alerta</h3>
+        <div id="detailType" class="small muted">—</div>
+        <div style="margin-top:8px" id="detailTime" class="small muted">—</div>
+
+        <div class="row" style="margin-top:12px">
+          <div>
+            <div class="small muted">Sensor</div>
+            <div id="detailSensor" style="font-weight:700">—</div>
+          </div>
+          <div>
+            <div class="small muted">Nível</div>
+            <div id="detailLevel" style="font-weight:700">—</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="small muted">Descrição</div>
+          <div id="detailDesc" style="margin-top:6px">—</div>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn" id="goMap">Ir para Mapa</button>
+          <button class="btn-ghost" id="toggleAck">Marcar como reconhecido</button>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="small muted">Histórico</div>
+          <div class="timeline" id="detailHistory"><!-- eventos --></div>
+        </div>
+      </aside>
+    </section>
+  </main>
+</div>
+
+<script>
+/* Dados simulados de alertas */
+let alerts = [
+  { id:1, type:'danger', title:'Nível crítico — Rio A', sensor:'X003', level:2.95, time:'2025-12-03T09:32:00', desc:'Nível acima do limite de emergência. Ação: evacuação recomendada.', ack:false, history:[{t:'2025-12-03T09:32', e:'Alerta gerado'}]},
+  { id:2, type:'alert', title:'Tendência de subida — Ponte Central', sensor:'X001', level:1.82, time:'2025-12-03T08:10:00', desc:'Subida rápida nas últimas horas.', ack:false, history:[{t:'2025-12-03T08:10', e:'Tendência detectada'}]},
+  { id:3, type:'info', title:'Sensor offline — Ponto B', sensor:'X005', level:null, time:'2025-12-03T07:48:00', desc:'Perda de comunicação com o sensor.', ack:true, history:[{t:'2025-12-03T07:48', e:'Sensor perdeu sinal'}]},
+  { id:4, type:'alert', title:'Subida rápida — Canal Leste', sensor:'X005', level:1.10, time:'2025-12-02T18:20:00', desc:'Variação atípica detectada.', ack:false, history:[{t:'2025-12-02T18:20', e:'Variação detectada'}]},
+  { id:5, type:'danger', title:'Transbordamento parcial — Reservatório Norte', sensor:'X004', level:2.60, time:'2025-11-29T22:10:00', desc:'Nível crítico detectado no reservatório.', ack:true, history:[{t:'2025-11-29T22:10', e:'Transbordamento parcial'}]}
+];
+
+/* popula opções de sensores em filtro */
+function populateSensorFilter(){
+  const set = new Set(alerts.map(a => a.sensor).filter(Boolean));
+  const sel = document.getElementById('sensorFilter');
+  sel.innerHTML = '<option value="all">Todos os sensores</option>';
+  set.forEach(s => {
+    const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o);
+  });
+}
+
+/* render lista de alertas com filtros */
+function renderAlerts(){
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const type = document.getElementById('typeFilter').value;
+  const sensor = document.getElementById('sensorFilter').value;
+  const period = document.getElementById('periodFilter').value;
+
+  const now = new Date();
+  const filtered = alerts.filter(a => {
+    if(type !== 'all' && a.type !== type) return false;
+    if(sensor !== 'all' && a.sensor !== sensor) return false;
+    if(q){
+      const hay = (a.title + ' ' + (a.desc||'') + ' ' + (a.sensor||'')).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    if(period){
+      const d = new Date(a.time);
+      if(period === '24h' && (now - d) > 24*60*60*1000) return false;
+      if(period === '7d' && (now - d) > 7*24*60*60*1000) return false;
+      if(period === '30d' && (now - d) > 30*24*60*60*1000) return false;
+    }
+    return true;
+  });
+
+  const list = document.getElementById('alertsList');
+  list.innerHTML = '';
+  if(filtered.length === 0){
+    list.innerHTML = '<div class="muted small">Nenhum alerta encontrado com os filtros aplicados.</div>';
+    clearDetail();
+    return;
+  }
+
+  filtered.sort((a,b)=> new Date(b.time) - new Date(a.time));
+  filtered.forEach(a=>{
+    const card = document.createElement('div');
+    card.className = 'alert-card';
+    const typeLabel = a.type === 'danger' ? 'danger' : (a.type==='alert' ? 'alert' : 'info');
+    card.innerHTML = `
+      <div class="alert-left">
+        <div class="pill ${typeLabel}">${a.type.toUpperCase()}</div>
+        <div class="alert-meta">
+          <div class="title">${a.title}</div>
+          <div class="sub">${a.sensor || '—'} • ${formatDate(a.time)}</div>
+        </div>
+      </div>
+      <div class="alert-actions">
+        <div class="small muted">${a.ack ? 'Reconhecido' : 'Pendente'}</div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn-ghost" data-action="view" data-id="${a.id}">Abrir</button>
+          <button class="btn" data-action="ack" data-id="${a.id}">${a.ack ? 'Desmarcar' : 'Marcar'}</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+
+  // attach handlers
+  document.querySelectorAll('[data-action="view"]').forEach(b => b.addEventListener('click', e => {
+    const id = Number(e.currentTarget.getAttribute('data-id')); openDetail(id);
+  }));
+  document.querySelectorAll('[data-action="ack"]').forEach(b => b.addEventListener('click', e => {
+    const id = Number(e.currentTarget.getAttribute('data-id')); toggleAck(id);
+  }));
+
+  // if detail empty, open first
+  const first = filtered[0];
+  if(first) openDetail(first.id);
+}
+
+/* abrir detalhes do alerta */
+function openDetail(id){
+  const a = alerts.find(x => x.id === id);
+  if(!a) return;
+  document.getElementById('detailTitle').textContent = a.title;
+  document.getElementById('detailType').textContent = a.type.toUpperCase();
+  document.getElementById('detailTime').textContent = formatDate(a.time);
+  document.getElementById('detailSensor').textContent = a.sensor || '—';
+  document.getElementById('detailLevel').textContent = a.level !== null ? a.level + ' m' : '—';
+  document.getElementById('detailDesc').textContent = a.desc || '—';
+  document.getElementById('toggleAck').textContent = a.ack ? 'Desmarcar reconhecido' : 'Marcar como reconhecido';
+  // history
+  const hist = document.getElementById('detailHistory');
+  hist.innerHTML = a.history.map(h => `<div class="small"><strong>${formatDate(h.t)}</strong> — ${h.e}</div>`).join('');
+}
+
+/* limpar painel */
+function clearDetail(){
+  document.getElementById('detailTitle').textContent = 'Selecione um alerta';
+  document.getElementById('detailType').textContent = '—';
+  document.getElementById('detailTime').textContent = '—';
+  document.getElementById('detailSensor').textContent = '—';
+  document.getElementById('detailLevel').textContent = '—';
+  document.getElementById('detailDesc').textContent = '—';
+  document.getElementById('detailHistory').innerHTML = '';
+}
+
+/* alternar ack */
+function toggleAck(id){
+  const a = alerts.find(x => x.id === id);
+  if(!a) return;
+  a.ack = !a.ack;
+  a.history = a.history || [];
+  a.history.push({ t: new Date().toISOString().slice(0,16).replace('T',' '), e: a.ack ? 'Alerta reconhecido' : 'Alerta não reconhecido' });
+  renderAlerts();
+  openDetail(id);
+}
+
+/* formatar data legível */
+function formatDate(iso){
+  const d = new Date(iso);
+  if(isNaN(d)) return iso;
+  return d.toLocaleString();
+}
+
+/* exportar para CSV (filtrados) */
+function exportCsv(){
+  const items = Array.from(document.querySelectorAll('#alertsList .alert-card')).map(card => {
+    const title = card.querySelector('.title').textContent;
+    const sub = card.querySelector('.sub').textContent;
+    const status = card.querySelector('.alert-actions .small') ? card.querySelector('.alert-actions .small').textContent : '';
+    return { title, sub, status };
+  });
+  if(items.length === 0){ alert('Nenhum alerta a exportar.'); return; }
+  const csv = [
+    ['Título','Meta','Status'],
+    ...items.map(i => [i.title, i.sub, i.status])
+  ].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `alertas_export_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* handlers */
+document.getElementById('applyFilter').addEventListener('click', renderAlerts);
+document.getElementById('exportCsv').addEventListener('click', exportCsv);
+document.getElementById('goMap').addEventListener('click', ()=> { window.location.href = 'mapa.html'; });
+
+/* nav active (mesma lógica) */
+(function markActiveNav(){
+  const anchors = document.querySelectorAll('nav a');
+  const path = window.location.pathname.split('/').pop() || 'alertas.html';
+  anchors.forEach(a=>{
+    const href = a.getAttribute('href');
+    if(href && href.split('/').pop() === path) a.classList.add('active'); else a.classList.remove('active');
+    if(!href || href.trim() === '#'){
+      a.addEventListener('click', (e)=>{ e.preventDefault(); const link = a.getAttribute('data-link') || 'acao'; alert('Navegar para: ' + link + ' (protótipo)');});
+    }
+  });
+})();
+
+/* inicialização */
+populateSensorFilter();
+renderAlerts();
+
+</script>
+</body>
+</html>

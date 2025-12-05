@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sensores — Monitoramento Hidrológico</title>
+<style>
+  :root{
+    --bg:#0f0720;
+    --panel:#200930;
+    --accent:#5a2d8a;
+    --muted:#9b84a8;
+    --card:#1b0f24;
+    --glass: rgba(255,255,255,0.03);
+    --success:#19b45e;
+    --warning:#f1c40f;
+    --danger:#e84141;
+    --white: #f7f6fb;
+    --radius:12px;
+    --shadow: 0 6px 18px rgba(0,0,0,0.5);
+    --max-width:1200px;
+    --transition: 200ms ease;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+  html,body{height:100%}
+  body{
+    background: linear-gradient(180deg,var(--bg), #0b0712);
+    color:var(--white);
+    padding:20px;
+  }
+  .app{max-width:var(--max-width);margin:12px auto;display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;}
+
+  /* SIDEBAR */
+  .sidebar{background:linear-gradient(180deg,var(--panel), #1a0720);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);height:calc(100vh - 48px);position:sticky;top:24px;overflow:auto;}
+  .brand{display:flex;gap:12px;align-items:center;margin-bottom:18px;}
+  .brand .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#3b1a5b);display:flex;align-items:center;justify-content:center;font-weight:700;}
+  .brand h1{font-size:15px;letter-spacing:0.3px}
+  nav ul{list-style:none;margin-top:8px}
+  nav li{margin:8px 0}
+  nav a{display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;color:var(--white);text-decoration:none;transition:background var(--transition),transform var(--transition);font-size:14px;}
+  nav a:hover{background:rgba(255,255,255,0.03);transform:translateX(4px)}
+  nav a.active{background:linear-gradient(90deg,var(--accent), #3b1a5b);box-shadow:0 6px 14px rgba(90,45,138,0.18)}
+  .sidebar .footer{margin-top:18px;font-size:13px;color:var(--muted)}
+
+  /* MAIN */
+  .main{min-height:80vh}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;}
+  .topbar .title{display:flex;flex-direction:column;}
+  .topbar h2{font-size:20px}
+  .topbar p{color:var(--muted);font-size:13px}
+
+  /* Content grid */
+  .grid{display:grid;grid-template-columns: 1fr 360px;gap:16px;align-items:start;}
+  .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:var(--shadow);}
+  .card.full{grid-column:1 / -1}
+
+  /* Controls */
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .search{flex:1;display:flex;gap:8px;align-items:center}
+  .search input{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:8px;color:var(--white);width:100%}
+  .select, .btn{background:linear-gradient(90deg,var(--accent), #3b1a5b);color:var(--white);padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+  .filter{background:var(--glass);padding:8px;border-radius:8px;color:var(--muted)}
+
+  /* Sensors list */
+  .list{display:flex;flex-direction:column;gap:10px;margin-top:12px;max-height:520px;overflow:auto;padding-right:6px}
+  .sensor-card{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);cursor:pointer;transition:transform var(--transition)}
+  .sensor-card:hover{transform:translateY(-4px)}
+  .sensor-left{display:flex;gap:12px;align-items:center}
+  .sensor-dot{width:14px;height:14px;border-radius:50%}
+  .sensor-meta{display:flex;flex-direction:column}
+  .sensor-meta .id{font-weight:700}
+  .sensor-meta .loc{color:var(--muted);font-size:13px}
+  .sensor-right{text-align:right}
+  .sensor-right .val{font-weight:800;font-size:18px}
+  .sensor-right .type{color:var(--muted);font-size:12px;margin-top:4px}
+
+  /* detail panel */
+  .detail-panel{background:linear-gradient(180deg, rgba(255,255,255,0.012), transparent);border-radius:12px;padding:14px;position:relative}
+  .detail-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .detail-header h3{font-size:16px}
+  .status-badge{padding:6px 10px;border-radius:999px;font-weight:700;font-size:13px}
+  .status-active{background:rgba(25,180,94,0.12);color:var(--success)}
+  .status-offline{background:rgba(155,132,168,0.08);color:var(--muted)}
+  .status-alert{background:rgba(241,196,15,0.12);color:var(--warning)}
+  .detail-body{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .detail-item{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:10px;border-radius:10px}
+  canvas.small{height:140px;width:100%;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);display:block}
+
+  /* mobile */
+  @media(max-width:980px){
+    .app{grid-template-columns:72px 1fr;}
+    .brand h1{display:none}
+    nav a span.text{display:none}
+    .sidebar{padding:12px;height:auto;position:relative;top:0}
+    .grid{grid-template-columns:1fr;}
+  }
+  @media(max-width:640px){
+    body{padding:12px}
+    .app{grid-template-columns:1fr;gap:12px}
+    .sidebar{display:none}
+  }
+
+  .muted{color:var(--muted)}
+  .right{margin-left:auto}
+  .small{font-size:13px}
+</style>
+</head>
+<body>
+<div class="app" role="application" aria-label="Painel — Sensores">
+  <!-- SIDEBAR (mesmo estilo do dashboard) -->
+  <aside class="sidebar" aria-label="Menu lateral">
+    <div class="brand" role="banner">
+      <div class="logo" aria-hidden="true">MH</div>
+      <div>
+        <h1>Monitoramento Hidrológico</h1>
+        <div class="muted" style="font-size:12px">Protótipo — Sensores</div>
+      </div>
+    </div>
+
+    <nav role="navigation" aria-label="Navegação principal">
+      <ul>
+        <li><a href="index.html" data-link="dashboard"><span class="dot" style="background:var(--muted)"></span><span class="text"> Dashboard</span></a></li>
+        <li><a href="sensores.html" data-link="sensors"><span class="dot" style="background:var(--accent)"></span><span class="text"> Sensores</span></a></li>
+        <li><a href="mapa.html" data-link="map"><span class="dot" style="background:var(--muted)"></span><span class="text"> Mapa</span></a></li>
+        <li><a href="alertas.html" data-link="alerts"><span class="dot" style="background:var(--muted)"></span><span class="text"> Alertas</span></a></li>
+        <li><a href="relatorios.html" data-link="reports"><span class="dot" style="background:var(--muted)"></span><span class="text"> Relatórios</span></a></li>
+        <li><a href="sobre.html" data-link="about"><span class="dot" style="background:var(--muted)"></span><span class="text"> Sobre</span></a></li>
+      </ul>
+    </nav>
+
+    <div class="footer">
+      <div>Usuário: <strong>Mestre</strong></div>
+      <div style="margin-top:8px;font-size:13px;color:var(--muted)">Versão protótipo</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" id="main">
+    <div class="topbar">
+      <div class="title">
+        <h2>Sensores</h2>
+        <p class="muted">Gerencie e visualize informações de cada ponto de monitoramento</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="muted" id="last-updated">Última atualização: — </div>
+        <button class="select" id="refreshBtn" aria-label="Atualizar lista">Atualizar</button>
+      </div>
+    </div>
+
+    <section class="grid" aria-live="polite">
+      <!-- Lista principal -->
+      <article class="card" role="region" aria-label="Lista de sensores">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div style="display:flex;gap:12px;align-items:center">
+            <div class="controls">
+              <div class="search" style="width:420px">
+                <input id="searchInput" placeholder="Buscar por ID ou localização..." aria-label="Buscar sensores">
+              </div>
+              <select id="filterStatus" class="filter" aria-label="Filtrar por status">
+                <option value="all">Todos os status</option>
+                <option value="active">Ativos</option>
+                <option value="alert">Alerta</option>
+                <option value="offline">Offline</option>
+              </select>
+              <select id="filterType" class="filter" aria-label="Filtrar por tipo">
+                <option value="all">Todos os tipos</option>
+                <option value="Ultrassônico">Ultrassônico</option>
+                <option value="Pressão">Pressão</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="muted small" id="countInfo">-- Sensores</div>
+            <button class="btn" id="newSensorBtn">Adicionar</button>
+          </div>
+        </div>
+
+        <div class="list" id="sensorsList" tabindex="0" aria-label="Lista de sensores">
+          <!-- preenchido por JS -->
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+          <div class="muted small">Exibindo <span id="showing">0</span> de <span id="total">0</span></div>
+          <div style="display:flex;gap:8px">
+            <button class="filter" id="prevPage">Anterior</button>
+            <button class="filter" id="nextPage">Próximo</button>
+          </div>
+        </div>
+      </article>
+
+      <!-- Painel de detalhes -->
+      <aside class="card detail-panel" role="region" aria-label="Detalhes do sensor" id="detailPanel">
+        <div class="detail-header">
+          <h3 id="detailTitle">Selecione um sensor</h3>
+          <div id="detailStatus" class="status-badge status-offline">—</div>
+        </div>
+
+        <div class="muted small" style="margin-top:8px" id="detailLoc">—</div>
+
+        <div class="detail-body" style="margin-top:12px">
+          <div class="detail-item">
+            <div style="font-size:13px;color:var(--muted)">Tipo</div>
+            <div id="detailType" style="font-weight:700;margin-top:4px">—</div>
+          </div>
+          <div class="detail-item">
+            <div style="font-size:13px;color:var(--muted)">Última medição</div>
+            <div id="detailValue" style="font-weight:700;margin-top:4px">—</div>
+          </div>
+          <div class="detail-item">
+            <div style="font-size:13px;color:var(--muted)">Status do dispositivo</div>
+            <div id="detailDevStatus" style="font-weight:700;margin-top:4px">—</div>
+          </div>
+          <div class="detail-item">
+            <div style="font-size:13px;color:var(--muted)">Sinal / Qualidade</div>
+            <div id="detailSignal" style="font-weight:700;margin-top:4px">—</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Últimas leituras</div>
+          <canvas id="sensorChart" class="small" aria-label="Gráfico de leituras do sensor"></canvas>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <a class="btn" href="mapa.html" id="openOnMap">Abrir no Mapa</a>
+          <button class="filter" id="viewHistory">Ver Histórico</button>
+          <button class="filter" id="sensorSettings">Configurar</button>
+        </div>
+
+        <div style="margin-top:12px;color:var(--muted);font-size:13px">ID: <span id="detailID">—</span></div>
+      </aside>
+    </section>
+
+  </main>
+</div>
+
+<script>
+/* ---------- Dados simulados ---------- */
+let sensors = [
+  {id:'X001', type:'Ultrassônico', loc:'Ponte Central', level:1.82, status:'active', signal:98, readings: genSeries(12)},
+  {id:'X002', type:'Pressão', loc:'Bairro Sul', level:0.95, status:'active', signal:91, readings: genSeries(12)},
+  {id:'X003', type:'Ultrassônico', loc:'Ponto B', level:2.95, status:'alert', signal:66, readings: genSeries(12)},
+  {id:'X004', type:'Pressão', loc:'Reservatório Norte', level:0.65, status:'active', signal:88, readings: genSeries(12)},
+  {id:'X005', type:'Ultrassônico', loc:'Canal Leste', level:1.10, status:'offline', signal:0, readings: genSeries(12)},
+  {id:'X006', type:'Pressão', loc:'Ponte Velha', level:2.10, status:'alert', signal:72, readings: genSeries(12)},
+  {id:'X007', type:'Ultrassônico', loc:'Estação A', level:0.50, status:'active', signal:96, readings: genSeries(12)},
+  {id:'X008', type:'Pressão', loc:'Bairro Norte', level:1.45, status:'active', signal:89, readings: genSeries(12)}
+];
+
+function genSeries(n){
+  const arr=[];
+  let base = +(1 + Math.random()).toFixed(2);
+  for(let i=0;i<n;i++){ base += (Math.random()-0.5)*0.12; arr.push(+(base).toFixed(2)); }
+  return arr;
+}
+
+/* ---------- Paginação / filtros ---------- */
+let page = 1;
+const perPage = 6;
+
+/* ---------- Elementos DOM ---------- */
+const sensorsListEl = document.getElementById('sensorsList');
+const countInfo = document.getElementById('countInfo');
+const showing = document.getElementById('showing');
+const totalEl = document.getElementById('total');
+const lastUpdatedEl = document.getElementById('last-updated');
+const searchInput = document.getElementById('searchInput');
+const filterStatus = document.getElementById('filterStatus');
+const filterType = document.getElementById('filterType');
+const prevPage = document.getElementById('prevPage');
+const nextPage = document.getElementById('nextPage');
+
+/* detail */
+const detailTitle = document.getElementById('detailTitle');
+const detailStatus = document.getElementById('detailStatus');
+const detailLoc = document.getElementById('detailLoc');
+const detailType = document.getElementById('detailType');
+const detailValue = document.getElementById('detailValue');
+const detailDevStatus = document.getElementById('detailDevStatus');
+const detailSignal = document.getElementById('detailSignal');
+const detailID = document.getElementById('detailID');
+
+/* ---------- Render list ---------- */
+function applyFilters(){
+  const q = searchInput.value.trim().toLowerCase();
+  const status = filterStatus.value;
+  const type = filterType.value;
+
+  let filtered = sensors.filter(s=>{
+    if(status!=='all' && s.status !== status) return false;
+    if(type!=='all' && s.type !== type) return false;
+    if(q && !(s.id.toLowerCase().includes(q) || s.loc.toLowerCase().includes(q))) return false;
+    return true;
+  });
+
+  totalEl.textContent = filtered.length;
+  const start = (page-1)*perPage;
+  const paged = filtered.slice(start, start+perPage);
+
+  sensorsListEl.innerHTML = '';
+  paged.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'sensor-card';
+    card.tabIndex = 0;
+    card.setAttribute('role','button');
+    card.innerHTML = `
+      <div class="sensor-left">
+        <div class="sensor-dot" style="background:${s.status==='active'? 'var(--success)': (s.status==='alert'? 'var(--warning)' : 'var(--muted)')}"></div>
+        <div class="sensor-meta">
+          <div class="id">${s.id} — ${s.loc}</div>
+          <div class="loc">${s.type}</div>
+        </div>
+      </div>
+      <div class="sensor-right">
+        <div class="val">${s.level.toFixed(2)} m</div>
+        <div class="type">${s.status === 'offline' ? 'Offline' : (s.status==='alert' ? 'Alerta' : 'Ativo')}</div>
+      </div>
+    `;
+    card.addEventListener('click', ()=> openDetail(s.id));
+    card.addEventListener('keypress', (e)=> { if(e.key === 'Enter') openDetail(s.id); });
+    sensorsListEl.appendChild(card);
+  });
+
+  showing.textContent = paged.length;
+  countInfo.textContent = `${start+1}–${start+paged.length} / ${filtered.length}`;
+  lastUpdatedEl.textContent = `Última atualização: ${new Date().toLocaleString()}`;
+}
+
+/* ---------- Abrir detalhe ---------- */
+function openDetail(id){
+  const s = sensors.find(x => x.id === id);
+  if(!s) return;
+  detailTitle.textContent = `${s.id} — ${s.loc}`;
+  detailLoc.textContent = s.loc;
+  detailType.textContent = s.type;
+  detailValue.textContent = `${s.level.toFixed(2)} m`;
+  detailDevStatus.textContent = s.status === 'offline' ? 'Offline' : (s.status === 'alert' ? 'Alerta' : 'Ativo');
+  detailSignal.textContent = s.signal + '%';
+  detailID.textContent = s.id;
+
+  // status badge
+  detailStatus.className = 'status-badge ' + (s.status==='active' ? 'status-active' : (s.status==='offline' ? 'status-offline' : 'status-alert'));
+  detailStatus.textContent = s.status === 'active' ? 'Ativo' : (s.status==='offline' ? 'Offline' : 'Alerta');
+
+  drawSensorChart('sensorChart', s.readings);
+}
+
+/* ---------- Gráfico simples por sensor ---------- */
+function drawSensorChart(canvasId, arr){
+  const c = document.getElementById(canvasId);
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  const ratio = window.devicePixelRatio || 1;
+  const width = c.clientWidth;
+  const height = c.clientHeight;
+  c.width = width * ratio; c.height = height * ratio; ctx.scale(ratio, ratio);
+  ctx.clearRect(0,0,width,height);
+  const pad = 20;
+  const innerW = width - pad*2;
+  const innerH = height - pad*2;
+  const min = Math.min(...arr); const max = Math.max(...arr); const range = max - min || 1;
+
+  // grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+  for(let i=0;i<=2;i++){ const y = pad + (innerH/2)*i; ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(width-pad,y); ctx.stroke(); }
+
+  // line
+  ctx.beginPath(); arr.forEach((v,i)=>{
+    const x = pad + (innerW/(arr.length-1))*i;
+    const y = pad + innerH - ((v-min)/range)*innerH;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  const grad = ctx.createLinearGradient(0,0,width,0); grad.addColorStop(0,'#8a3be0'); grad.addColorStop(1,'#622190');
+  ctx.strokeStyle = grad; ctx.lineWidth = 2; ctx.stroke();
+
+  // points
+  ctx.fillStyle = '#fff'; arr.forEach((v,i)=>{ const x = pad + (innerW/(arr.length-1))*i; const y = pad + innerH - ((v-min)/range)*innerH; ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2); ctx.fill(); });
+}
+
+/* ---------- Eventos ---------- */
+document.getElementById('refreshBtn').addEventListener('click', ()=> {
+  // simula atualização
+  sensors.forEach(s => {
+    if(s.status !== 'offline'){
+      s.level = +(s.level + (Math.random()-0.5)*0.08).toFixed(2);
+      s.signal = Math.max(40, Math.min(100, s.signal + Math.round((Math.random()-0.5)*6)));
+      s.readings.shift(); s.readings.push(+(s.level + (Math.random()-0.5)*0.06).toFixed(2));
+      if(s.level > 2.5) s.status = 'alert';
+      else if(s.status === 'alert' && s.level < 2.0) s.status = 'active';
+    }
+  });
+  applyFilters();
+});
+searchInput.addEventListener('input', ()=> { page = 1; applyFilters(); });
+filterStatus.addEventListener('change', ()=> { page = 1; applyFilters(); });
+filterType.addEventListener('change', ()=> { page = 1; applyFilters(); });
+prevPage.addEventListener('click', ()=> { if(page>1){ page--; applyFilters(); } });
+nextPage.addEventListener('click', ()=> { page++; applyFilters(); });
+
+/* navigation (marcar ativo conforme arquivo atual)
+   Não bloqueamos navegacao padrão para anchors que apontem a arquivos. */
+(function markActiveNav(){
+  const anchors = document.querySelectorAll('nav a');
+  const path = window.location.pathname.split('/').pop() || 'sensores.html';
+  anchors.forEach(a=>{
+    const href = a.getAttribute('href');
+    if(href && href.split('/').pop() === path){
+      a.classList.add('active');
+    } else {
+      a.classList.remove('active');
+    }
+    // se href == "#" (ou vazio) e data-link presente, mantemos comportamento protótipo
+    if(!href || href.trim() === '#'){
+      a.addEventListener('click', (e)=>{
+        e.preventDefault();
+        const link = a.getAttribute('data-link') || 'acao';
+        alert('Navegar para: ' + link + ' (protótipo)');
+      });
+    }
+  });
+})();
+
+/* inicializar */
+document.getElementById('total').textContent = sensors.length;
+applyFilters();
+openDetail(sensors[0].id);
+
+/* redimensionar gráficos */
+let rto; window.addEventListener('resize', ()=> { clearTimeout(rto); rto = setTimeout(()=> {
+  const id = detailID.textContent; const s = sensors.find(x => x.id === id); if(s) drawSensorChart('sensorChart', s.readings);
+}, 140); });
+</script>
+</body>
+</html>

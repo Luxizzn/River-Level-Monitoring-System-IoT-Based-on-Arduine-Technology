@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sobre — Monitoramento Hidrológico</title>
+<style>
+  :root{
+    --bg:#0f0720;
+    --panel:#200930;
+    --accent:#5a2d8a;
+    --muted:#9b84a8;
+    --card:#1b0f24;
+    --glass: rgba(255,255,255,0.03);
+    --success:#19b45e;
+    --warning:#f1c40f;
+    --danger:#e84141;
+    --white: #f7f6fb;
+    --radius:12px;
+    --shadow: 0 6px 18px rgba(0,0,0,0.5);
+    --max-width:1100px;
+    --transition: 200ms ease;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;}
+  html,body{height:100%}
+  body{
+    background: linear-gradient(180deg,var(--bg), #0b0712);
+    color:var(--white);
+    padding:20px;
+  }
+
+  .app{max-width:var(--max-width);margin:12px auto;display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;}
+
+  /* SIDEBAR */
+  .sidebar{background:linear-gradient(180deg,var(--panel), #1a0720);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);height:calc(100vh - 48px);position:sticky;top:24px;overflow:auto;}
+  .brand{display:flex;gap:12px;align-items:center;margin-bottom:18px;}
+  .brand .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#3b1a5b);display:flex;align-items:center;justify-content:center;font-weight:700;}
+  .brand h1{font-size:15px}
+  nav ul{list-style:none;margin-top:8px}
+  nav li{margin:8px 0}
+  nav a{display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;color:var(--white);text-decoration:none;transition:background var(--transition),transform var(--transition);font-size:14px;}
+  nav a:hover{background:rgba(255,255,255,0.03);transform:translateX(4px)}
+  nav a.active{background:linear-gradient(90deg,var(--accent), #3b1a5b);box-shadow:0 6px 14px rgba(90,45,138,0.18)}
+  .sidebar .footer{margin-top:18px;font-size:13px;color:var(--muted)}
+
+  /* MAIN */
+  .main{min-height:80vh}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;}
+  .title h2{font-size:20px}
+  .muted{color:var(--muted)}
+  .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:var(--shadow);}
+
+  /* content */
+  .hero{display:flex;gap:18px;align-items:flex-start;margin-bottom:16px}
+  .hero .logo-big{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#3b1a5b);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}
+  .hero h3{margin-bottom:6px}
+  .sections{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start}
+  .section{margin-bottom:12px}
+  .meta-list{list-style:none;padding-left:0;margin-top:8px}
+  .meta-list li{margin:8px 0;color:var(--muted);font-size:14px}
+  .team{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+  .member{display:flex;gap:10px;align-items:center}
+  .avatar{width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--white)}
+  .contact{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+  .link{color:var(--accent);text-decoration:underline;cursor:pointer}
+  .kbd{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:6px;font-weight:700}
+
+  @media(max-width:980px){
+    .app{grid-template-columns:72px 1fr;}
+    .brand h1{display:none}
+    nav a span.text{display:none}
+    .sidebar{padding:12px;height:auto;position:relative;top:0}
+    .sections{grid-template-columns:1fr}
+  }
+  @media(max-width:640px){
+    body{padding:12px}
+    .app{grid-template-columns:1fr;gap:12px}
+    .sidebar{display:none}
+  }
+
+  footer{margin-top:12px;color:var(--muted);font-size:13px}
+  .btn{background:linear-gradient(90deg,var(--accent), #3b1a5b);color:var(--white);padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+</style>
+</head>
+<body>
+<div class="app" role="application" aria-label="Sobre o projeto — Monitoramento Hidrológico">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" aria-label="Menu lateral">
+    <div class="brand">
+      <div class="logo">MH</div>
+      <div>
+        <h1>Monitoramento Hidrológico</h1>
+        <div class="muted" style="font-size:12px">Protótipo — Sobre</div>
+      </div>
+    </div>
+
+    <nav role="navigation" aria-label="Navegação principal">
+      <ul>
+        <li><a href="index.html" data-link="dashboard"><span class="dot" style="background:var(--muted)"></span><span class="text"> Dashboard</span></a></li>
+        <li><a href="sensores.html" data-link="sensors"><span class="dot" style="background:var(--muted)"></span><span class="text"> Sensores</span></a></li>
+        <li><a href="mapa.html" data-link="map"><span class="dot" style="background:var(--muted)"></span><span class="text"> Mapa</span></a></li>
+        <li><a href="alertas.html" data-link="alerts"><span class="dot" style="background:var(--muted)"></span><span class="text"> Alertas</span></a></li>
+        <li><a href="relatorios.html" data-link="reports"><span class="dot" style="background:var(--muted)"></span><span class="text"> Relatórios</span></a></li>
+        <li><a href="sobre.html" data-link="about" class="active"><span class="dot" style="background:var(--accent)"></span><span class="text"> Sobre</span></a></li>
+      </ul>
+    </nav>
+
+    <div class="sidebar footer">
+      <div>Usuário: <strong>Mestre</strong></div>
+      <div style="margin-top:8px;font-size:13px;color:var(--muted)">Versão protótipo</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="title">
+        <h2>Sobre o Projeto</h2>
+        <div class="muted">Informações institucionais, equipe, tecnologias e como contribuir.</div>
+      </div>
+      <div>
+        <button class="btn" onclick="window.location.href='index.html'">Voltar ao Dashboard</button>
+      </div>
+    </div>
+
+    <section class="card" aria-labelledby="project-overview">
+      <div class="hero">
+        <div class="logo-big" aria-hidden="true">MH</div>
+        <div>
+          <h3 id="project-overview">Sistema IoT de Monitoramento de Nível de Rios</h3>
+          <div class="muted">Protótipo acadêmico para coleta, visualização e alerta de níveis hídricos com foco em prevenção de enchentes.</div>
+        </div>
+      </div>
+
+      <div class="sections">
+        <div>
+          <div class="section">
+            <h4>Objetivos</h4>
+            <p class="muted" style="margin-top:8px">
+              Fornecer uma plataforma de visualização em tempo real que permita autoridades e gestores monitorarem níveis de água,
+              detectarem tendências de risco e acionarem medidas preventivas com antecedência.
+            </p>
+            <ul class="meta-list">
+              <li>Detecção e notificação de riscos (normal / alerta / emergência).</li>
+              <li>Visualização geográfica dos pontos monitorados (mapa interativo).</li>
+              <li>Geração de relatórios e histórico para análises hidrológicas.</li>
+            </ul>
+          </div>
+
+          <div class="section">
+            <h4>Escopo do Protótipo</h4>
+            <ul class="meta-list">
+              <li>Interface web responsiva (dashboard, sensores, mapa, alertas, relatórios e página institucional).</li>
+              <li>Simulação de dados para prototipagem; possibilidade de integrar com Arduino/ESP32 e backend real.</li>
+              <li>Camada meteorológica (radar) disponível via RainViewer para contexto pluviométrico.</li>
+            </ul>
+          </div>
+
+          <div class="section">
+            <h4>Como contribuir</h4>
+            <p class="muted" style="margin-top:8px">O protótipo foi pensado para facilitar contribuições de alunos e desenvolvedores:</p>
+            <ul class="meta-list">
+              <li>Substituir dados simulados por uma API REST ou WebSocket.</li>
+              <li>Adicionar autenticação e controle de permissões.</li>
+              <li>Integrar fontes SIG/WMS locais para camadas de rios e bacias.</li>
+            </ul>
+          </div>
+        </div>
+
+        <aside>
+          <div class="section">
+            <h4>Tecnologias</h4>
+            <ul class="meta-list">
+              <li>Frontend: HTML, CSS e JS puros (sem frameworks)</li>
+              <li>Mapas: Leaflet + OpenStreetMap</li>
+              <li>Camadas meteorológicas: RainViewer (tiles de radar)</li>
+              <li>Backend (sugestão): Python / FastAPI ou Node.js — banco: PostgreSQL</li>
+            </ul>
+          </div>
+
+          <div class="section">
+            <h4>Equipe</h4>
+            <div class="team">
+              <div class="member"><div class="avatar">LM</div><div><strong>Mestre (Coordenador)</strong><div class="muted small">Professor / Orientador</div></div></div>
+              <div class="member"><div class="avatar">AL</div><div><strong>Aluno A</strong><div class="muted small">Desenvolvimento Frontend</div></div></div>
+              <div class="member"><div class="avatar">BR</div><div><strong>Aluno B</strong><div class="muted small">Integração IoT</div></div></div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h4>Contato</h4>
+            <div class="contact">
+              <div class="muted">E-mail:</div>
+              <div><a class="link" href="mailto:contato@exemplo.org">contato@exemplo.org</a></div>
+              <div class="muted" style="margin-top:8px">Documentação & Repositório</div>
+              <div><a class="link" href="#" onclick="alert('Link para repositório (substituir)')">github.com/seu-projeto</a></div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h4>Licença</h4>
+            <p class="muted" style="margin-top:8px">Código e protótipo disponibilizados como material didático — recomendo MIT License para uso acadêmico e colaborativo.</p>
+            <div style="margin-top:8px"><span class="kbd">MIT</span></div>
+          </div>
+        </aside>
+      </div>
+
+      <footer style="margin-top:14px" class="muted">
+        © 2025 — Projeto Acadêmico — Sistema IoT de Monitoramento de Nível de Rios. Desenvolvido para fins educacionais.
+      </footer>
+    </section>
+  </main>
+</div>
+
+<script>
+/* marca nav ativo (mesma lógica dos demais arquivos) */
+(function markActiveNav(){
+  const anchors = document.querySelectorAll('nav a');
+  const path = window.location.pathname.split('/').pop() || 'sobre.html';
+  anchors.forEach(a=>{
+    const href = a.getAttribute('href');
+    if(href && href.split('/').pop() === path) a.classList.add('active'); else a.classList.remove('active');
+    if(!href || href.trim() === '#'){
+      a.addEventListener('click', (e)=>{ e.preventDefault(); const link = a.getAttribute('data-link') || 'acao'; alert('Navegar para: ' + link + ' (protótipo)');});
+    }
+  });
+})();
+</script>
+</body>
+</html>
